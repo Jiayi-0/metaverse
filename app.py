@@ -84,18 +84,21 @@ if st.button('Predict Risk'):
         'ip_prefix': [ip_prefix],
         'purchase_pattern': [purchase_pattern],
         'age_group': [age_group]
-    })
-
+    })    
+  
     # Perform one-hot encoding using pd.get_dummies
-    input_data = pd.get_dummies(input_data[['month','day_of_week','time_category','transaction_type', 'location_region', 'ip_prefix', 'purchase_pattern', 'age_group']], dtype=int)
-    
-    # Reorder columns to match training data
-    input_data = input_data.reindex(columns=encoder_columns, fill_value=0)
+    input_data_encoded = pd.get_dummies(input_data[['month','day_of_week','time_category','transaction_type', 'location_region', 'ip_prefix', 'purchase_pattern', 'age_group']], dtype=int)
     
     # Scale the numerical features
     numerical_features = ['amount', 'login_frequency', 'session_duration', 'risk_score']
-
-    input_data[numerical_features] = scaler.transform(input_data[numerical_features])
+    input_data_scaled = scaler.transform(input_data[numerical_features])
+    input_data_scaled = pd.DataFrame(input_data_scaled, columns=numerical_features)
+    
+    # Concatenate encoded categorical features and standardized numerical features
+    input_data = pd.concat([input_data_encoded.reset_index(drop=True), input_data_scaled.reset_index(drop=True)],axis=1)
+    
+    # Reorder columns to match the sequence of features used during model training
+    input_data = input_data.reindex(columns=encoder_columns, fill_value=0)
 
     # Make the prediction
     prediction = model.predict(input_data)
